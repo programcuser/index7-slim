@@ -1,0 +1,13 @@
+{
+    "name": "begininguser/index7-slim",
+    "description": "Microframework slim example",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mr Smith",
+            "email": "krygrish@yandex.ru"
+        }
+    ],
+    "require": {}
+}
