@@ -41,10 +41,14 @@ $app->get('/', function ($request, $response) {
 
 $app->get('/users', function ($request, $response) use ($users) {
     $term = $request->getQueryParam('term');
+    $paramsArr = $request->getQueryParams();
+    $newUsers = $users;
 
-    //$filterUsers = array_filter($users, fn($us) => strpos($us, $term) !== false);//вхождение в любом месте строки
-    $filterUsers = array_filter($users, fn($us) => strpos($us, $term) === 0); //по началу строки
-    $params = ['users' => $filterUsers, 'term' => $term];
+    if (count($paramsArr) !== 0) {
+        //$filterUsers = array_filter($users, fn($us) => strpos($us, $term) !== false);//вхождение в любом месте строки
+        $newUsers = array_filter($users, fn($us) => strpos($us, $term) === 0); //по началу строки
+    }
+    $params = ['users' => $newUsers, 'term' => $term];
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 });
 
