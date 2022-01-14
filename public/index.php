@@ -6,6 +6,10 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
 use DI\Container;
 
+
+$users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
+
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
@@ -23,16 +27,25 @@ $app->get('/', function ($request, $response) {
 });
 //$app->run();
 
-$app->get('/users', function ($request, $response) {
-    return $response->write('GET /users');
-});
+//$app->get('/users', function ($request, $response) {
+//    return $response->write('GET /users');
+//});
 
 //$app->post('/users', function ($request, $response) {
 //    return $response->write('POST /users');
 //});
 
-$app->post('/users', function ($request, $response) {
-    return $response->withStatus(302);
+//$app->post('/users', function ($request, $response) {
+//    return $response->withStatus(302);
+//});
+
+$app->get('/users', function ($request, $response) use ($users) {
+    $term = $request->getQueryParam('term');
+
+    //$filterUsers = array_filter($users, fn($us) => strpos($us, $term) !== false);//вхождение в любом месте строки
+    $filterUsers = array_filter($users, fn($us) => strpos($us, $term) === 0); //по началу строки
+    $params = ['users' => $filterUsers, 'term' => $term];
+    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) {
