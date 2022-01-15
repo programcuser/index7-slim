@@ -5,6 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use DI\Container;
+use function Symfony\Component\String\s;
 
 
 $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
@@ -39,16 +40,17 @@ $app->get('/', function ($request, $response) {
 //    return $response->withStatus(302);
 //});
 
+//нужно использовать библиотеки Symfony\Component\String\s из Symfony, collect из Laravel
 $app->get('/users', function ($request, $response) use ($users) {
     $term = $request->getQueryParam('term');
     $paramsArr = $request->getQueryParams();
-    $newUsers = $users;
+    $newUsers = collect($users)->map(fn($us) => s($us));
 
     if (count($paramsArr) !== 0) {
-        //$filterUsers = array_filter($users, fn($us) => strpos($us, $term) !== false);//вхождение в любом месте строки
-        $newUsers = array_filter($users, fn($us) => strpos($us, $term) === 0); //по началу строки
+        $newUsers = $newUsers->filter(fn($us) => $us->startsWith($term));
     }
-    $params = ['users' => $newUsers, 'term' => $term];
+    //print_r($newUsers->toArray());
+    $params = ['users' => $newUsers->toArray(), 'term' => $term];
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 });
 
