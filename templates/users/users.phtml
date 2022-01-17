@@ -1,0 +1,11 @@
+<?php if (count($users) !== 0) : ?>
+<table>
+  <?php foreach ($users as $user): ?>
+    <tr>
+      <td>
+          <?= htmlspecialchars($user['nickname']) ?>
+      </td>
+    </tr>
+  <?php endforeach ?>
+</table>
+<?php endif ?>
