@@ -57,21 +57,21 @@ $app->get('/', function ($request, $response) {
 //});
 
 $app->get('/users', function ($request, $response) use ($usersFilePath) {
-    $usersText = file_get_contents($usersFilePath);
+    $usersText = s(file_get_contents($usersFilePath));
+    //var_dump($usersText);
+    //var_dump(s("fjfjf\n")->split("\n"));
     //print_r($usersText);
-    //$usersArr = explode("\n", $usersText);
-    $usersArr = json_decode($usersText, true);
-    //$usersCount = count($usersArr);
-    //array_splice($usersArr, $usersCount - 1);
-    //var_dump(count($usersArr));
-    //$usersArr = $usersArr ?? [];
-    /*$newUsers = array_map(function ($us) {
-        $usr = json_decode($us, true);
-        print_r($usr);
-        //return $us;
-        return "{$usr['name']} - {$usr['nickname']}";
-    }, $usersArr);*/
+    $usersArr = [];
 
+    if (!$usersText->isEmpty()) {
+        $strArr = $usersText->split("\n");
+
+        $usersArr = array_map(function ($usr) {
+            return json_decode($usr, true);
+        }, $strArr);
+    }
+    //$usersArr = json_decode($usersText, true);
+    
     $params = ['users' => $usersArr];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
 });
@@ -83,14 +83,30 @@ $app->get('/users/new', function ($request, $response) {
 $app->post('/users', function ($request, $response) use ($usersFilePath) {
     $user = $request->getParsedBodyParam('user');
     
-    $usersText = file_get_contents($usersFilePath);
-    $usersArr = json_decode($usersText);
-    $usersNum = count($usersArr);
+    $usersText = s(file_get_contents($usersFilePath));
+    $newUsersText = '';
+    if (!$usersText->isEmpty()) {
+        $strArr = $usersText->split("\n");
+        var_dump($strArr);
+        $usersArr = array_map(function ($usr) {
+            return json_decode($usr, true);
+        }, $strArr);
+        var_dump($usersArr);
+        $usersNum = count($strArr);
+        $user['id'] = $usersNum + 1;
+        $usersArr[] = $user;
 
-    $user['id'] = $usersNum + 1;
-    $usersArr[] = $user;
-    $userJson = json_encode($usersArr, JSON_PRETTY_PRINT);
-    file_put_contents($usersFilePath, $userJson);
+        $usersPlusOneArr = array_map(function ($usr) {
+            return json_encode($usr, true);
+        }, $usersArr);
+
+        $newUsersText = s("\n")->join($usersPlusOneArr);
+    } else {
+        $user['id'] = 1;
+        $newUsersText = json_encode($user);
+    }
+
+    file_put_contents($usersFilePath, $newUsersText);
 
     return $response->withRedirect('/users', 302);
     //return $this->get('renderer')->render($response, 'users/new.phtml', $params);
