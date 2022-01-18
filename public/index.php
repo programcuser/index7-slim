@@ -74,13 +74,16 @@ $app->get('/users', function ($request, $response) use ($usersFilePath) {
     
     $params = ['users' => $usersArr];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
-});
+})->setName('users');
 
 $app->get('/users/new', function ($request, $response) {
     return $this->get('renderer')->render($response, 'users/new.phtml');
-});
+})->setName('newUser');
 
-$app->post('/users', function ($request, $response) use ($usersFilePath) {
+//Named Routes
+$router = $app->getRouteCollector()->getRouteParser();
+
+$app->post('/users', function ($request, $response) use ($usersFilePath, $router) {
     $user = $request->getParsedBodyParam('user');
     
     $usersText = s(file_get_contents($usersFilePath));
@@ -108,7 +111,7 @@ $app->post('/users', function ($request, $response) use ($usersFilePath) {
 
     file_put_contents($usersFilePath, $newUsersText);
 
-    return $response->withRedirect('/users', 302);
+    return $response->withRedirect($router->urlFor('users'), 302);
     //return $this->get('renderer')->render($response, 'users/new.phtml', $params);
 });
 
@@ -118,7 +121,7 @@ $app->get('/users/{id}', function ($request, $response, $args) {
     // $this доступен внутри анонимной функции благодаря https://php.net/manual/ru/closure.bindto.php
     // $this в Slim это контейнер зависимостей
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
-});
+})->setName('user');
 
 $app->get('/courses/{id}', function ($request, $response, array $args) {
     $id = $args['id'];
