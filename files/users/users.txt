@@ -2,3 +2,4 @@
 {"nickname":"Edd","email":"edd@mail.com","id":2}
 {"nickname":"check","email":"check@check.ch","id":3}
 {"nickname":"Namedroutes","email":"named@routes.com","id":4}
+{"nickname":"flash","email":"flash@slim.com","id":5}

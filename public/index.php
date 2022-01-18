@@ -7,6 +7,8 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 use function Symfony\Component\String\s;
 
+// Старт PHP сессии
+session_start();
 
 $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
 $usersFilePath = __DIR__ . '/../files/users/users.txt';
@@ -16,7 +18,12 @@ $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
-$app = AppFactory::createFromContainer($container);
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
+
+$app = AppFactory::setContainer($container);
+$app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
 
 $app->get('/', function ($request, $response) {
@@ -58,6 +65,10 @@ $app->get('/', function ($request, $response) {
 
 $app->get('/users', function ($request, $response) use ($usersFilePath) {
     $usersText = s(file_get_contents($usersFilePath));
+
+    // Извлечение flash сообщений установленных на предыдущем запросе
+    $messages = $this->get('flash')->getMessages();
+    //print_r($messages);
     //var_dump($usersText);
     //var_dump(s("fjfjf\n")->split("\n"));
     //print_r($usersText);
@@ -72,11 +83,14 @@ $app->get('/users', function ($request, $response) use ($usersFilePath) {
     }
     //$usersArr = json_decode($usersText, true);
     
-    $params = ['users' => $usersArr];
+    $params = ['users' => $usersArr, 'flash' => $messages];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
 })->setName('users');
 
 $app->get('/users/new', function ($request, $response) {
+        // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
+        $this->get('flash')->addMessage('success', 'The user added successfully!');
+        $this->get('flash')->addMessage('error', 'Incorrect fields');
     return $this->get('renderer')->render($response, 'users/new.phtml');
 })->setName('newUser');
 
