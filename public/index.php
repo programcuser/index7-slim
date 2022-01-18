@@ -90,11 +90,11 @@ $app->post('/users', function ($request, $response) use ($usersFilePath, $router
     $newUsersText = '';
     if (!$usersText->isEmpty()) {
         $strArr = $usersText->split("\n");
-        var_dump($strArr);
+        //var_dump($strArr);
         $usersArr = array_map(function ($usr) {
             return json_decode($usr, true);
         }, $strArr);
-        var_dump($usersArr);
+        //var_dump($usersArr);
         $usersNum = count($strArr);
         $user['id'] = $usersNum + 1;
         $usersArr[] = $user;
@@ -115,8 +115,25 @@ $app->post('/users', function ($request, $response) use ($usersFilePath, $router
     //return $this->get('renderer')->render($response, 'users/new.phtml', $params);
 });
 
-$app->get('/users/{id}', function ($request, $response, $args) {
-    $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
+$app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePath) {
+    $usersText = s(file_get_contents($usersFilePath));
+
+    $usersArr = [];
+
+    if (!$usersText->isEmpty()) {
+        $strArr = $usersText->split("\n");
+
+        $usersArr = array_map(function ($usr) {
+            return json_decode($usr, true);
+        }, $strArr);
+    }
+
+    $usr = collect($usersArr)->firstWhere('id', $args['id']);
+    //var_dump($usr);
+    if (!isset($usr)) {
+        return $response->withStatus(404);
+    }
+    $params = ['id' => $usr['id'], 'nickname' => $usr['nickname'], 'email' => $usr['email']];
     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
     // $this доступен внутри анонимной функции благодаря https://php.net/manual/ru/closure.bindto.php
     // $this в Slim это контейнер зависимостей
