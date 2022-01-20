@@ -89,8 +89,14 @@ $app->get('/users', function ($request, $response) use ($usersFilePath) {
 
 $app->get('/users/new', function ($request, $response) {
         // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
-        $this->get('flash')->addMessage('success', 'The user added successfully!');
-        $this->get('flash')->addMessage('error', 'Incorrect fields');
+    $this->get('flash')->addMessage('success', 'The user added successfully!');
+    $this->get('flash')->addMessage('error', 'Incorrect fields');
+
+    $params = [
+        'user' => [],
+        'errors' => []
+    ];
+
     return $this->get('renderer')->render($response, 'users/new.phtml');
 })->setName('newUser');
 
@@ -99,34 +105,47 @@ $router = $app->getRouteCollector()->getRouteParser();
 
 $app->post('/users', function ($request, $response) use ($usersFilePath, $router) {
     $user = $request->getParsedBodyParam('user');
+
+    $validator = new App\Validator();
+    $errors = $validator->validate($user);
+
+    if (count($errors) === 0) {
     
-    $usersText = s(file_get_contents($usersFilePath));
-    $newUsersText = '';
-    if (!$usersText->isEmpty()) {
-        $strArr = $usersText->split("\n");
-        //var_dump($strArr);
-        $usersArr = array_map(function ($usr) {
-            return json_decode($usr, true);
-        }, $strArr);
-        //var_dump($usersArr);
-        $usersNum = count($strArr);
-        $user['id'] = $usersNum + 1;
-        $usersArr[] = $user;
+        $usersText = s(file_get_contents($usersFilePath));
+        $newUsersText = '';
+        if (!$usersText->isEmpty()) {
+            $strArr = $usersText->split("\n");
+            //var_dump($strArr);
+            $usersArr = array_map(function ($usr) {
+                return json_decode($usr, true);
+            }, $strArr);
+            //var_dump($usersArr);
+            $usersNum = count($strArr);
+            $user['id'] = $usersNum + 1;
+            $usersArr[] = $user;
 
-        $usersPlusOneArr = array_map(function ($usr) {
-            return json_encode($usr, true);
-        }, $usersArr);
+            $usersPlusOneArr = array_map(function ($usr) {
+                return json_encode($usr, true);
+            }, $usersArr);
 
-        $newUsersText = s("\n")->join($usersPlusOneArr);
-    } else {
-        $user['id'] = 1;
-        $newUsersText = json_encode($user);
+            $newUsersText = s("\n")->join($usersPlusOneArr);
+        } else {
+            $user['id'] = 1;
+            $newUsersText = json_encode($user);
+        }
+
+        file_put_contents($usersFilePath, $newUsersText);
+
+        return $response->withRedirect($router->urlFor('users'), 302);
     }
 
-    file_put_contents($usersFilePath, $newUsersText);
-
-    return $response->withRedirect($router->urlFor('users'), 302);
-    //return $this->get('renderer')->render($response, 'users/new.phtml', $params);
+    $params = [
+        'user' => $user,
+        'errors' => $errors
+    ];
+    
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'users/new.phtml', $params);
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePath) {
@@ -145,7 +164,7 @@ $app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePa
     $usr = collect($usersArr)->firstWhere('id', $args['id']);
     //var_dump($usr);
     if (!isset($usr)) {
-        return $response->withStatus(404);
+        return $response->write('Page not found')->withStatus(404);
     }
     $params = ['id' => $usr['id'], 'nickname' => $usr['nickname'], 'email' => $usr['email']];
     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации

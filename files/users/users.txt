@@ -3,3 +3,4 @@
 {"nickname":"check","email":"check@check.ch","id":3}
 {"nickname":"Namedroutes","email":"named@routes.com","id":4}
 {"nickname":"flash","email":"flash@slim.com","id":5}
+{"nickname":"validator","email":"validator@template.com","id":6}
