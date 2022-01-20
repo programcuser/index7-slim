@@ -187,9 +187,12 @@ $app->get('/users/{id}/edit', function ($request, $response, $args) {
         return $response->write('Page not found')->withStatus(404);
     }
 
+    $messages = $this->get('flash')->getMessages();
+
     $params = [
         'user' => $user,
-        'errors' => []
+        'errors' => [],
+        'flash' => $messages
     ];
 
     return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
@@ -217,7 +220,6 @@ $app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
     }
 
     $params = [
-        'userData' => $data,
         'user' => $user,
         'errors' => $errors
     ];

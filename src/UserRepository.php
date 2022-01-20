@@ -17,9 +17,13 @@ class UserRepository
         if (!isset($newUser['id'])) {
             $usersNum = count($usersArr);
             $newUser['id'] = $usersNum + 1;
+            $usersArr[] = $newUser;
+        } else {
+            $id = $newUser['id'];
+            $usersArr[$id - 1] = $newUser;
         }
 
-        $usersArr[] = $newUser;
+        
         $usersJson = json_encode($usersArr, JSON_PRETTY_PRINT);
 
         file_put_contents($this->path, $usersJson);
