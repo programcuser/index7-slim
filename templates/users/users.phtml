@@ -1,4 +1,9 @@
-<?= $flash['success'][0] ?>
+<?php if (isset($flash['success'])) : ?>
+  <?php foreach ($flash['success'] as $mess): ?>
+    <div> <p> <?= $mess ?> </p> </div>
+  <?php endforeach ?>
+<?php endif ?>
+
 <?php if (count($users) !== 0) : ?>
 <table>
   <?php foreach ($users as $user): ?>

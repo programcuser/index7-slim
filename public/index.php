@@ -4,6 +4,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
+use Slim\Middleware\MethodOverrideMiddleware;
 use DI\Container;
 use function Symfony\Component\String\s;
 
@@ -24,6 +25,7 @@ $container->set('flash', function () {
 
 $app = AppFactory::setContainer($container);
 $app = AppFactory::create();
+$app->add(MethodOverrideMiddleware::class);
 $app->addErrorMiddleware(true, true, true);
 
 $app->get('/', function ($request, $response) {
@@ -64,24 +66,20 @@ $app->get('/', function ($request, $response) {
 //});
 
 $app->get('/users', function ($request, $response) use ($usersFilePath) {
-    $usersText = s(file_get_contents($usersFilePath));
+    //$usersText = s(file_get_contents($usersFilePath));
 
     // Извлечение flash сообщений установленных на предыдущем запросе
     $messages = $this->get('flash')->getMessages();
-    //print_r($messages);
-    //var_dump($usersText);
-    //var_dump(s("fjfjf\n")->split("\n"));
-    //print_r($usersText);
-    $usersArr = [];
-
-    if (!$usersText->isEmpty()) {
-        $strArr = $usersText->split("\n");
-
-        $usersArr = array_map(function ($usr) {
-            return json_decode($usr, true);
-        }, $strArr);
-    }
-    //$usersArr = json_decode($usersText, true);
+    $repo = new App\UserRepository();
+    $usersArr = $repo->all();
+    //$usersArr = [];
+    //if (!$usersText->isEmpty()) {
+    //    $strArr = $usersText->split("\n");
+   //     
+   //     $usersArr = array_map(function ($usr) {
+   //         return json_decode($usr, true);
+   //     }, $strArr);
+   // }
     
     $params = ['users' => $usersArr, 'flash' => $messages];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
@@ -111,31 +109,33 @@ $app->post('/users', function ($request, $response) use ($usersFilePath, $router
 
     if (count($errors) === 0) {
     
-        $usersText = s(file_get_contents($usersFilePath));
-        $newUsersText = '';
-        if (!$usersText->isEmpty()) {
-            $strArr = $usersText->split("\n");
-            //var_dump($strArr);
-            $usersArr = array_map(function ($usr) {
-                return json_decode($usr, true);
-            }, $strArr);
-            //var_dump($usersArr);
-            $usersNum = count($strArr);
-            $user['id'] = $usersNum + 1;
-            $usersArr[] = $user;
+        // $usersText = s(file_get_contents($usersFilePath));
+        // $newUsersText = '';
+        // if (!$usersText->isEmpty()) {
+        //     $strArr = $usersText->split("\n");
+        //     //var_dump($strArr);
+        //     $usersArr = array_map(function ($usr) {
+        //         return json_decode($usr, true);
+        //     }, $strArr);
+        //     //var_dump($usersArr);
+        //     $usersNum = count($strArr);
+        //     $user['id'] = $usersNum + 1;
+        //     $usersArr[] = $user;
 
-            $usersPlusOneArr = array_map(function ($usr) {
-                return json_encode($usr, true);
-            }, $usersArr);
+        //     $usersPlusOneArr = array_map(function ($usr) {
+        //         return json_encode($usr, true);
+        //     }, $usersArr);
 
-            $newUsersText = s("\n")->join($usersPlusOneArr);
-        } else {
-            $user['id'] = 1;
-            $newUsersText = json_encode($user);
-        }
+        //     $newUsersText = s("\n")->join($usersPlusOneArr);
+        // } else {
+        //     $user['id'] = 1;
+        //     $newUsersText = json_encode($user);
+        // }
 
-        file_put_contents($usersFilePath, $newUsersText);
+        // file_put_contents($usersFilePath, $newUsersText);
 
+        $repo = new App\UserRepository();
+        $usersArr = $repo->save($user);
         return $response->withRedirect($router->urlFor('users'), 302);
     }
 
@@ -149,33 +149,40 @@ $app->post('/users', function ($request, $response) use ($usersFilePath, $router
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePath) {
-    $usersText = s(file_get_contents($usersFilePath));
+    $id = $args['id'];
+    // $usersText = s(file_get_contents($usersFilePath));
 
-    $usersArr = [];
+    // $usersArr = [];
 
-    if (!$usersText->isEmpty()) {
-        $strArr = $usersText->split("\n");
+    // if (!$usersText->isEmpty()) {
+    //     $strArr = $usersText->split("\n");
 
-        $usersArr = array_map(function ($usr) {
-            return json_decode($usr, true);
-        }, $strArr);
-    }
+    //     $usersArr = array_map(function ($usr) {
+    //         return json_decode($usr, true);
+    //     }, $strArr);
+    // }
 
-    $usr = collect($usersArr)->firstWhere('id', $args['id']);
+    // $usr = collect($usersArr)->firstWhere('id', $args['id']);
     //var_dump($usr);
+    $repo = new App\UserRepository();
+    $usr = $repo->find($id);
+
     if (!isset($usr)) {
         return $response->write('Page not found')->withStatus(404);
     }
-    $params = ['id' => $usr['id'], 'nickname' => $usr['nickname'], 'email' => $usr['email']];
+    $params = ['user' => $usr];
     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
     // $this доступен внутри анонимной функции благодаря https://php.net/manual/ru/closure.bindto.php
     // $this в Slim это контейнер зависимостей
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('user');
 
-$app->get('/courses/{id}', function ($request, $response, array $args) {
-    $id = $args['id'];
-    return $response->write("Course id: {$id}");
+$app->get('/users/{id}/edit', function ($request, $response, $args) use ($usersFilePath) {
+
+});
+
+$app->patch('users/id', function ($request, $response, $args) use ($usersFilePath) {
+
 });
 
 $app->run();
