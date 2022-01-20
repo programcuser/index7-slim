@@ -12,7 +12,7 @@ use function Symfony\Component\String\s;
 session_start();
 
 $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
-$usersFilePath = __DIR__ . '/../files/users/users.txt';
+//$usersFilePath = __DIR__ . '/../files/users/users.txt';
 
 $container = new Container();
 $container->set('renderer', function () {
@@ -65,7 +65,7 @@ $app->get('/', function ($request, $response) {
 //    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 //});
 
-$app->get('/users', function ($request, $response) use ($usersFilePath) {
+$app->get('/users', function ($request, $response) {
     //$usersText = s(file_get_contents($usersFilePath));
 
     // Извлечение flash сообщений установленных на предыдущем запросе
@@ -101,7 +101,7 @@ $app->get('/users/new', function ($request, $response) {
 //Named Routes
 $router = $app->getRouteCollector()->getRouteParser();
 
-$app->post('/users', function ($request, $response) use ($usersFilePath, $router) {
+$app->post('/users', function ($request, $response) use ($router) {
     $user = $request->getParsedBodyParam('user');
 
     $validator = new App\Validator();
@@ -148,7 +148,7 @@ $app->post('/users', function ($request, $response) use ($usersFilePath, $router
     return $this->get('renderer')->render($response, 'users/new.phtml', $params);
 });
 
-$app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePath) {
+$app->get('/users/{id}', function ($request, $response, $args) {
     $id = $args['id'];
     // $usersText = s(file_get_contents($usersFilePath));
 
@@ -177,12 +177,53 @@ $app->get('/users/{id}', function ($request, $response, $args) use ($usersFilePa
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('user');
 
-$app->get('/users/{id}/edit', function ($request, $response, $args) use ($usersFilePath) {
+$app->get('/users/{id}/edit', function ($request, $response, $args) {
+    $repo = new App\UserRepository();
+    $id = $args['id'];
 
-});
+    $user = $repo->find($id);
 
-$app->patch('users/id', function ($request, $response, $args) use ($usersFilePath) {
+    if (!isset($user)) {
+        return $response->write('Page not found')->withStatus(404);
+    }
 
+    $params = [
+        'user' => $user,
+        'errors' => []
+    ];
+
+    return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
+})->setName('editUser');
+
+$app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
+    $repo = new App\UserRepository();
+    $id = $args['id'];
+
+    $user = $repo->find($id);
+    $data = $request->getParsedBodyParam('user');
+
+    $validator = new App\Validator();
+    $errors = $validator->validate($data);
+
+    if (count($errors) === 0) {
+        $user['nickname'] = $data['nickname'];
+        $user['email'] = $data['email'];
+
+        $this->get('flash')->addMessage('success', 'User has been updated');
+        $repo->save($user);
+
+        $url = $router->urlFor('editUser', ['id' => $user['id']]);
+        return $response->withRedirect($url);
+    }
+
+    $params = [
+        'userData' => $data,
+        'user' => $user,
+        'errors' => $errors
+    ];
+
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
 });
 
 $app->run();
