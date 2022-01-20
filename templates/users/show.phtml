@@ -1,3 +1,8 @@
 <h1>Hello, <?= htmlspecialchars($user['nickname']) ?></h1>
 <h2>Your id is <?= htmlspecialchars($user['id']) ?></h2>
 <h2>Your email is <?= htmlspecialchars($user['email']) ?></h2>
+
+<form action="/users/<?= $user['id'] ?>" method="post">
+  <input type="hidden" name="_METHOD" value="DELETE">
+  <input type="submit" value="Remove user">
+</form>

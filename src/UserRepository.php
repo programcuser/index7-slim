@@ -35,6 +35,21 @@ class UserRepository
         return $usersArr->firstWhere('id', $id);
     }
 
+    public function destroy(int $id)
+    {
+        $usersArr = $this->getUsers();
+
+        if (isset($usersArr[$id - 1])) {
+            unset($usersArr[$id - 1]);
+
+            $usersJson = json_encode(array_values($usersArr), JSON_PRETTY_PRINT);
+
+            file_put_contents($this->path, $usersJson);
+        }
+        
+    }
+
+
     public function all()
     {
         return $this->getUsers();

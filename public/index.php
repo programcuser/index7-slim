@@ -228,5 +228,18 @@ $app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
     return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
 });
 
+
+$app->delete('/users/{id}', function ($request, $response, $args) use ($router) {
+    $repo = new App\UserRepository();
+    $id = $args['id'];
+
+    $repo->destroy($id);
+
+    $this->get('flash')->addMessage('success', 'User has been removed');
+
+    //$url = $router->urlFor('users');
+    return $response->withRedirect($router->urlFor('users'));
+});
+
 $app->run();
 
