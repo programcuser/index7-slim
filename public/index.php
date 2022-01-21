@@ -66,24 +66,17 @@ $app->get('/', function ($request, $response) {
 //});
 
 $app->get('/users', function ($request, $response) {
-    //$usersText = s(file_get_contents($usersFilePath));
+    $users = $request->getCookieParam('users', json_encode([]));
 
-    // Извлечение flash сообщений установленных на предыдущем запросе
-    $messages = $this->get('flash')->getMessages();
-    $repo = new App\UserRepository();
+    $repo = new App\UserRepository($users);
     $usersArr = $repo->all();
-    //$usersArr = [];
-    //if (!$usersText->isEmpty()) {
-    //    $strArr = $usersText->split("\n");
-   //     
-   //     $usersArr = array_map(function ($usr) {
-   //         return json_decode($usr, true);
-   //     }, $strArr);
-   // }
     
+    $messages = $this->get('flash')->getMessages();
+
     $params = ['users' => $usersArr, 'flash' => $messages];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
 })->setName('users');
+
 
 $app->get('/users/new', function ($request, $response) {
     $params = [
@@ -104,40 +97,16 @@ $app->post('/users', function ($request, $response) use ($router) {
     $errors = $validator->validate($user);
 
     if (count($errors) === 0) {
-    
-        // $usersText = s(file_get_contents($usersFilePath));
-        // $newUsersText = '';
-        // if (!$usersText->isEmpty()) {
-        //     $strArr = $usersText->split("\n");
-        //     //var_dump($strArr);
-        //     $usersArr = array_map(function ($usr) {
-        //         return json_decode($usr, true);
-        //     }, $strArr);
-        //     //var_dump($usersArr);
-        //     $usersNum = count($strArr);
-        //     $user['id'] = $usersNum + 1;
-        //     $usersArr[] = $user;
+        $users = $request->getCookieParam('users', json_encode([]));
+        $repo = new App\UserRepository($users);
 
-        //     $usersPlusOneArr = array_map(function ($usr) {
-        //         return json_encode($usr, true);
-        //     }, $usersArr);
+        $this->get('flash')->addMessage('success', 'The user added successfully!'); 
 
-        //     $newUsersText = s("\n")->join($usersPlusOneArr);
-        // } else {
-        //     $user['id'] = 1;
-        //     $newUsersText = json_encode($user);
-        // }
+        $repo->save($user);
+        $usersJson = $repo->getJson();
 
-        // file_put_contents($usersFilePath, $newUsersText);
-
-        $repo = new App\UserRepository();
-
-        // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
-        $this->get('flash')->addMessage('success', 'The user added successfully!');
-        $this->get('flash')->addMessage('error', 'Incorrect fields');    
-
-        $usersArr = $repo->save($user);
-        return $response->withRedirect($router->urlFor('users'), 302);
+        return $response->withHeader('Set-Cookie', "users={$usersJson}")
+                ->withRedirect($router->urlFor('users'), 302);
     }
 
     $params = [
@@ -150,36 +119,23 @@ $app->post('/users', function ($request, $response) use ($router) {
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) {
+    $users = $request->getCookieParam('users', json_encode([]));
     $id = $args['id'];
-    // $usersText = s(file_get_contents($usersFilePath));
-
-    // $usersArr = [];
-
-    // if (!$usersText->isEmpty()) {
-    //     $strArr = $usersText->split("\n");
-
-    //     $usersArr = array_map(function ($usr) {
-    //         return json_decode($usr, true);
-    //     }, $strArr);
-    // }
-
-    // $usr = collect($usersArr)->firstWhere('id', $args['id']);
-    //var_dump($usr);
-    $repo = new App\UserRepository();
+   
+    $repo = new App\UserRepository($users);
     $usr = $repo->find($id);
 
     if (!isset($usr)) {
         return $response->write('Page not found')->withStatus(404);
     }
     $params = ['user' => $usr];
-    // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
-    // $this доступен внутри анонимной функции благодаря https://php.net/manual/ru/closure.bindto.php
-    // $this в Slim это контейнер зависимостей
+
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('user');
 
 $app->get('/users/{id}/edit', function ($request, $response, $args) {
-    $repo = new App\UserRepository();
+    $users = $request->getCookieParam('users', json_encode([]));
+    $repo = new App\UserRepository($users);
     $id = $args['id'];
 
     $user = $repo->find($id);
@@ -200,7 +156,8 @@ $app->get('/users/{id}/edit', function ($request, $response, $args) {
 })->setName('editUser');
 
 $app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
-    $repo = new App\UserRepository();
+    $users = $request->getCookieParam('users', json_encode([]));
+    $repo = new App\UserRepository($users);
     $id = $args['id'];
 
     $user = $repo->find($id);
@@ -217,7 +174,8 @@ $app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
         $repo->save($user);
 
         $url = $router->urlFor('editUser', ['id' => $user['id']]);
-        return $response->withRedirect($url);
+        $usersJson = $repo->getJson();
+        return $response->withHeader('Set-Cookie', "users={$usersJson}")->withRedirect($url);
     }
 
     $params = [
@@ -231,16 +189,16 @@ $app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
 
 
 $app->delete('/users/{id}', function ($request, $response, $args) use ($router) {
-    $repo = new App\UserRepository();
+    $users = $request->getCookieParam('users', json_encode([]));
+    $repo = new App\UserRepository($users);
     $id = $args['id'];
 
     $repo->destroy($id);
 
     $this->get('flash')->addMessage('success', 'User has been removed');
-
+    $usersJson = $repo->getJson();
     //$url = $router->urlFor('users');
-    return $response->withRedirect($router->urlFor('users'));
+    return $response->withHeader('Set-Cookie', "users={$usersJson}")->withRedirect($router->urlFor('users'));
 });
 
 $app->run();
-

@@ -2,6 +2,7 @@
 
 namespace App;
 
+/*
 class UserRepository
 {
     private $path;
@@ -66,5 +67,61 @@ class UserRepository
         $users = file_get_contents($this->path);
         $usersArr = json_decode($users, true);
         return $usersArr;
+    }
+}
+*/
+
+class UserRepository
+{
+    private $jsonArr;
+
+    public function __construct(string $jsonStr){
+        $this->jsonArr = json_decode($jsonStr, true);
+    }
+
+    public function save(array $newUser)
+    {
+        if (count($this->jsonArr) !== 0) {
+            if (!array_key_exists('id', $newUser)) {
+                $lastKey = array_key_last($this->jsonArr);
+                $lastId = $this->jsonArr[$lastKey]['id'];
+                $newId = $lastId + 1;
+                $newUser['id'] = $newId;
+
+                $this->jsonArr[$newId] = $newUser;
+            } else {
+                $id = $newUser['id'];
+                $this->jsonArr[$id] = $newUser;
+            }
+        } else {
+            $id = 1;
+            $newUser['id'] = $id;
+            $this->jsonArr[$id] = $newUser;
+        }
+    }
+
+    public function find(int $id)
+    {    
+        if (array_key_exists($id, $this->jsonArr)) {
+            return $this->jsonArr[$id];
+        }
+
+        return null;
+    }
+
+    public function destroy(int $id)
+    {
+        if (array_key_exists($id, $this->jsonArr)) {
+            unset($this->jsonArr[$id]);
+        }
+    }
+
+    public function all()
+    {
+        return array_values($this->jsonArr);
+    }
+
+    public function getJson() {
+        return json_encode($this->jsonArr);
     }
 }
