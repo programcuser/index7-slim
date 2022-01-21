@@ -1,32 +1,37 @@
-[
-    {
+{
+    "1": {
         "nickname": "lalal",
         "email": "lalal@example.com",
         "id": 1
     },
-    {
+    "2": {
         "nickname": "Edd",
         "email": "edd@mail.com",
         "id": 2
     },
-    {
+    "3": {
         "nickname": "Namedroutes",
         "email": "named@routes.com",
         "id": 3
     },
-    {
+    "4": {
         "nickname": "flash",
         "email": "flash@slim.com",
         "id": 4
     },
-    {
+    "5": {
         "nickname": "validator",
         "email": "validator@template.com",
         "id": 5
     },
-    {
+    "8": {
         "nickname": "check",
         "email": "check@check.ch",
-        "id": 6
+        "id": 8
+    },
+    "9": {
+        "nickname": "hahaha",
+        "email": "hohoho@santa.com",
+        "id": 9
     }
-]
+}

@@ -86,10 +86,6 @@ $app->get('/users', function ($request, $response) {
 })->setName('users');
 
 $app->get('/users/new', function ($request, $response) {
-        // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
-    $this->get('flash')->addMessage('success', 'The user added successfully!');
-    $this->get('flash')->addMessage('error', 'Incorrect fields');
-
     $params = [
         'user' => [],
         'errors' => []
@@ -135,6 +131,11 @@ $app->post('/users', function ($request, $response) use ($router) {
         // file_put_contents($usersFilePath, $newUsersText);
 
         $repo = new App\UserRepository();
+
+        // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
+        $this->get('flash')->addMessage('success', 'The user added successfully!');
+        $this->get('flash')->addMessage('error', 'Incorrect fields');    
+
         $usersArr = $repo->save($user);
         return $response->withRedirect($router->urlFor('users'), 302);
     }

@@ -14,16 +14,19 @@ class UserRepository
     {
         $usersArr = $this->getUsers();
 
-        if (!isset($newUser['id'])) {
-            $usersNum = count($usersArr);
-            $newUser['id'] = $usersNum + 1;
-            $usersArr[] = $newUser;
+        if (count($usersArr) !== 0) {
+            $lastKey = array_key_last($usersArr);
+            $lastId = $usersArr[$lastKey]['id'];
+            $newId = $lastId + 1;
+            $newUser['id'] = $newId;
+
+            $usersArr[$newId] = $newUser;
         } else {
-            $id = $newUser['id'];
-            $usersArr[$id - 1] = $newUser;
+            $id = 1;
+            $newUser['id'] = $id;
+            $usersArr[$id] = $newUser;
         }
 
-        
         $usersJson = json_encode($usersArr, JSON_PRETTY_PRINT);
 
         file_put_contents($this->path, $usersJson);
@@ -31,28 +34,31 @@ class UserRepository
 
     public function find(int $id)
     {
-        $usersArr = collect($this->getUsers());
-        return $usersArr->firstWhere('id', $id);
+        $usersArr = $this->getUsers();
+        
+        if (array_key_exists($id, $usersArr)) {
+            return $usersArr[$id];
+        }
+
+        return null;
     }
 
     public function destroy(int $id)
     {
         $usersArr = $this->getUsers();
 
-        if (isset($usersArr[$id - 1])) {
-            unset($usersArr[$id - 1]);
+        if (array_key_exists($id, $usersArr)) {
+            unset($usersArr[$id]);
 
-            $usersJson = json_encode(array_values($usersArr), JSON_PRETTY_PRINT);
-
+            $usersJson = json_encode($usersArr, JSON_PRETTY_PRINT);
             file_put_contents($this->path, $usersJson);
         }
-        
     }
 
 
     public function all()
     {
-        return $this->getUsers();
+        return array_values($this->getUsers());
     }
 
     private function getUsers(): array
