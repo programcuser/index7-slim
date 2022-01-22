@@ -8,7 +8,7 @@ use Slim\Middleware\MethodOverrideMiddleware;
 use DI\Container;
 use function Symfony\Component\String\s;
 
-// Старт PHP сессии
+// Старт PHP сессии для flash сообщений
 session_start();
 
 $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
@@ -35,7 +35,9 @@ $app->get('/', function ($request, $response) {
     // return $response->write('Welcome to Slim!');
     //print_r(file_get_contents('example.txt', FILE_USE_INCLUDE_PATH));
     //print_r(__DIR__);
-    return $response->write('Welcome to Hexlet!');
+    $messages = $this->get('flash')->getMessages();
+
+    return $response->write("Welcome to Hexlet!<br>{$messages['error'][0]}");
 });
 //$app->run();
 
@@ -199,6 +201,36 @@ $app->delete('/users/{id}', function ($request, $response, $args) use ($router) 
     $usersJson = $repo->getJson();
     //$url = $router->urlFor('users');
     return $response->withHeader('Set-Cookie', "users={$usersJson}")->withRedirect($router->urlFor('users'));
+});
+
+$app->post('/session', function($request, $response) use ($router) {
+    $user = $request->getParsedBodyParam('user');
+
+    $path = __DIR__ . '/../files/users/users.json';
+    $users = file_get_contents($path);
+    $usersArr = array_values(json_decode($users, true));
+
+    $userExists = (collect($usersArr))->firstWhere('email', $user['email']);
+
+    if (isset($userExists)) {
+
+        session_start();
+
+        if (!isset($_SESSION['user'])) {
+            $_SESSION['user']['email'] = $userExists['email'];
+            $_SESSION['user']['nickname'] = $userExists['nickname'];
+        }
+        return $response->withRedirect($router->urlFor('users'));
+    }
+
+    $this->get('flash')->addMessage('error', 'Wrong email');
+    return $response->withRedirect('/');
+});
+
+$app->delete('/session', function($request, $response) use ($router) {
+    $_SESSION = [];
+    session_destroy();
+    return $response->withRedirect($router->urlFor('users'));
 });
 
 $app->run();
