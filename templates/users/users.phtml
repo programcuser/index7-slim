@@ -16,6 +16,8 @@
 </table>
 <?php endif ?>
 
+<div>
+<p>Authorization</p>
 <?php if (!isset($_SESSION['user'])) : ?>
 <form action="/session" method="post">
   <div>
@@ -39,3 +41,4 @@
   <input type="submit" value="Sign Out">
 </form>
 <?php endif ?>
+</div>
